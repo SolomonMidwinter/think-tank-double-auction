@@ -1,0 +1,64 @@
+  10/450 jobs, 60s
+  20/450 jobs, 108s
+  30/450 jobs, 149s
+  40/450 jobs, 188s
+  50/450 jobs, 227s
+  60/450 jobs, 266s
+  70/450 jobs, 306s
+  80/450 jobs, 350s
+  90/450 jobs, 391s
+  100/450 jobs, 431s
+  110/450 jobs, 469s
+  120/450 jobs, 507s
+  130/450 jobs, 545s
+  140/450 jobs, 588s
+  150/450 jobs, 625s
+  160/450 jobs, 665s
+  170/450 jobs, 703s
+  180/450 jobs, 743s
+  190/450 jobs, 784s
+  200/450 jobs, 820s
+  210/450 jobs, 855s
+  220/450 jobs, 894s
+  230/450 jobs, 933s
+  240/450 jobs, 973s
+  250/450 jobs, 1013s
+  260/450 jobs, 1053s
+  270/450 jobs, 1091s
+  280/450 jobs, 1129s
+  290/450 jobs, 1168s
+  300/450 jobs, 1205s
+  310/450 jobs, 1246s
+  320/450 jobs, 1286s
+  330/450 jobs, 1325s
+  340/450 jobs, 1363s
+  350/450 jobs, 1403s
+  360/450 jobs, 1439s
+  370/450 jobs, 1477s
+  380/450 jobs, 1515s
+  390/450 jobs, 1555s
+  400/450 jobs, 1596s
+  410/450 jobs, 1634s
+  420/450 jobs, 1674s
+  430/450 jobs, 1711s
+  440/450 jobs, 1749s
+  450/450 jobs, 1788s
+450 jobs in 1788s
+      state  dead_band  coding  mean_gamma_honest_flag  mean_gamma_auc_comms  mean_gamma_auc_oversight  mean_gamma_emp_flag_comms  mean_gamma_perm_flag_comms  mean_gamma_perm_flag_oversight  max_net_honest_flag  max_net_auc_comms  max_net_auc_oversight  max_net_emp_flag_comms  max_net_perm_flag_comms  max_net_perm_flag_oversight
+   gap_last       0.05 ternary                       8                  0.35                      0.36                          0                           8                              10                    0               0.72                   0.81                       0                        2                            3
+   gap_last       0.05  binary                       8                  0.34                      0.37                          0                           8                              10                    2               0.72                   0.72                       0                        3                            5
+   gap_last       0.25 ternary                      10                  0.35                      0.28                          0                           9                               7                    0               0.66                   0.65                       1                        2                            2
+   gap_last       0.25  binary                      10                  0.33                      0.23                          0                           9                               6                    1               0.56                   0.57                       1                        4                            2
+       none       0.05 ternary                      10                  0.32                      0.34                          0                          10                              10                    3               0.54                   0.73                       0                        3                            7
+       none       0.05  binary                       9                  0.33                      0.26                          1                          10                              10                    2               0.62                   0.74                       0                        4                            6
+       none       0.25 ternary                      10                  0.33                      0.20                          0                          10                               8                    1               0.79                   0.56                       2                        6                            1
+       none       0.25  binary                      10                  0.33                      0.19                          0                          10                               8                    2               0.76                   0.56                       3                        6                            2
+      phase       0.05 ternary                       7                  0.55                      0.65                          1                           8                               9                    1               0.61                   0.73                       0                        0                            1
+      phase       0.05  binary                       5                  0.55                      0.53                          1                           7                               8                    0               0.54                   0.71                       0                        0                            2
+      phase       0.25 ternary                      10                  0.68                      0.29                          2                          10                               5                    0               0.66                   0.59                       1                        1                            0
+      phase       0.25  binary                       9                  0.59                      0.28                          2                          10                               5                    0               0.68                   0.55                       2                        1                            0
+traded_last       0.05  binary                       8                  0.34                      0.36                          1                           9                              10                    2               0.64                   0.73                       0                        3                            4
+traded_last       0.25 ternary                       9                  0.38                      0.32                          0                           9                               7                    0               0.76                   0.55                       4                        4                            1
+traded_last       0.25  binary                      10                  0.43                      0.31                          0                           9                               6                    1               0.73                   0.55                       3                        5                            3
+grid exit 0
+ALL_DONE

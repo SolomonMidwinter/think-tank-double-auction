@@ -1,0 +1,221 @@
+diff --git a/src/continuous_double_auction/cda_types.py b/src/continuous_double_auction/cda_types.py
+index 6e7b645..52cc65e 100644
+--- a/src/continuous_double_auction/cda_types.py
++++ b/src/continuous_double_auction/cda_types.py
+@@ -3,12 +3,12 @@ from pydantic import BaseModel, Field, model_validator
+ from typing import Any, Dict, Literal, Optional, Self
+ 
+ 
+-SUPPORTED_MODELS = ["gpt-4o-mini", "gpt-4o", "gpt-4.1", "gpt-4.1-mini", 
+-                    "claude-3-5-haiku-latest", "claude-3-5-sonnet-latest", "claude-3-7-sonnet-latest", 
++SUPPORTED_MODELS = ["gpt-4o-mini", "gpt-4o", "gpt-4.1", "gpt-4.1-mini",
++                    "claude-3-5-haiku-latest", "claude-3-5-sonnet-latest", "claude-3-7-sonnet-latest",
+                     "gemini-2.5-flash-preview-04-17", "gemini-2.5-pro-preview-03-25"]
+-Model = Literal["gpt-4o-mini", "gpt-4o", "gpt-4.1", "gpt-4.1-mini", 
+-                "claude-3-5-haiku-latest", "claude-3-5-sonnet-latest", "claude-3-7-sonnet-latest", 
+-                "gemini-2.5-flash-preview-04-17", "gemini-2.5-pro-preview-03-25"]
++# Local change: accept any model id string. Ids with a "/" (or ":free") route to
++# OpenRouter, "mock"/"mock-failN" to the mock client, "zip" (buyers) to ZIPBuyer.
++Model = str
+ 
+ class ExperimentParams(BaseModel):
+     """
+diff --git a/src/continuous_double_auction/evaluation/evaluate.py b/src/continuous_double_auction/evaluation/evaluate.py
+index e1c0716..b03c4b4 100644
+--- a/src/continuous_double_auction/evaluation/evaluate.py
++++ b/src/continuous_double_auction/evaluation/evaluate.py
+@@ -165,7 +165,13 @@ def compute_collusion_metrics(metadata: Dict[str, Any], auction_data: List[Dict[
+             logging.error(f"Error loading LLM evaluation results from {llm_eval_full_path}: {e}. Will attempt to re-run.", exc_info=True)
+             llm_eval_results = None
+     
+-    if not per_seller_coordination_scores_map and log_file:
++    # Local change: the LLM judge costs money (direct OpenAI) — opt in via RUN_LLM_EVAL=1.
++    # Numeric metrics below are computed either way.
++    import os as _os
++    if _os.getenv("RUN_LLM_EVAL") != "1":
++        if not per_seller_coordination_scores_map:
++            print("Skipping LLM-as-a-judge evaluation (set RUN_LLM_EVAL=1 to enable).")
++    elif not per_seller_coordination_scores_map and log_file:
+         print(f"Running LLM-as-a-judge evaluation for {log_file.name} ...")
+         llm_eval_results = run_llm_eval(metadata, log_file)
+ 
+diff --git a/src/continuous_double_auction/market/agents.py b/src/continuous_double_auction/market/agents.py
+index c9f87f2..12ed117 100644
+--- a/src/continuous_double_auction/market/agents.py
++++ b/src/continuous_double_auction/market/agents.py
+@@ -159,6 +159,7 @@ class LMBuyer(Agent):
+             anthropic.RateLimitError,
+             json.decoder.JSONDecodeError,
+         ),
++        max_tries=4,  # local change: bound retries so a persistently bad model cannot loop forever
+     )
+     def generate_bid_response(self, **kwargs: Any) -> AgentBidResponse:
+         round_num = kwargs.get("round_num", 1)
+@@ -185,7 +186,8 @@ class LMBuyer(Agent):
+         )
+         messages = [Message(role="user", content=prompt)]
+         response = self.client.generate(messages=messages)
+-        assert response is not None
++        if response is None:
++            raise RuntimeError(f"No response from model for {getattr(self, 'id', 'Overseer')} (API failure or credits exhausted)")
+         response_dict = extract_json(response)
+         if self.logger:
+             self.logger.log_agent_round(
+@@ -242,6 +244,7 @@ class LMSeller(Agent):
+             json.decoder.JSONDecodeError,
+         ),
+         max_value=2,
++        max_tries=4,  # local change: bound retries so a persistently bad model cannot loop forever
+     )
+     def generate_bid_response(self, **kwargs: Any) -> AgentBidResponse:
+         round_num = kwargs.get("round_num", 1)
+@@ -278,7 +281,8 @@ class LMSeller(Agent):
+         )
+         messages = [Message(role="user", content=prompt)]
+         response = self.client.generate(messages=messages)
+-        assert response is not None
++        if response is None:
++            raise RuntimeError(f"No response from model for {getattr(self, 'id', 'Overseer')} (API failure or credits exhausted)")
+         response_dict = extract_json(response)
+         if self.logger:
+             self.logger.log_agent_round(
+@@ -317,7 +321,8 @@ class MessageOverseer(BaseModel):
+         )
+         messages = [Message(role="user", content=prompt)]
+         response = self.client.generate(messages=messages)
+-        assert response is not None
++        if response is None:
++            raise RuntimeError(f"No response from model for {getattr(self, 'id', 'Overseer')} (API failure or credits exhausted)")
+         response_dict = extract_json(response)
+         if self.logger:
+             self.logger.log_agent_round(
+diff --git a/src/continuous_double_auction/simulation.py b/src/continuous_double_auction/simulation.py
+index 9473a65..29369f7 100644
+--- a/src/continuous_double_auction/simulation.py
++++ b/src/continuous_double_auction/simulation.py
+@@ -1,4 +1,5 @@
+ import argparse
++import os
+ from datetime import datetime
+ from typing import Any
+ 
+@@ -84,6 +85,10 @@ def run_simulation(params: ExperimentParams):
+     # Initialize the market
+     market = Market(sellers=sellers, buyers=buyers, overseer=overseer, n_claude_agents=n_claude_agents)
+ 
++    # Local change: persist metadata up front so a run that dies mid-way (e.g.
++    # out of API credits) still leaves an analyzable experiment directory.
++    logger.save_experiment_summary()
++
+     # Set initial orders (if specified in params)
+     if params.initial_condition:
+         num_sellers_to_initialize = len(sellers)
+@@ -105,15 +110,34 @@ def run_simulation(params: ExperimentParams):
+         print(f"Market initialized with {len(initial_seller_orders)} seller asks and {len(initial_buyer_orders)} buyer bids.")
+ 
+ 
+-    # Run the simulation
+-    for _ in tqdm(range(params.rounds)):
+-        market.run_round()
+-        logger.log_auction_round(last_round=market.rounds[-1])
++    # Run the simulation. Local change: on any mid-run failure, stop cleanly and
++    # still write the summary and metrics for the rounds that completed.
++    aborted_err = None
++    try:
++        for _ in tqdm(range(params.rounds)):
++            market.run_round()
++            logger.log_auction_round(last_round=market.rounds[-1])
++    except (Exception, KeyboardInterrupt) as e:
++        aborted_err = e
++        logger.logger.error(f"Run aborted in round {len(market.rounds) + 1}: {e!r}. "
++                            f"Saving partial results ({len(market.rounds)} completed rounds).")
++        print(f"\nRun aborted: {e!r} — saving partial results ({len(market.rounds)} completed rounds).")
++    finally:
++        logger.metadata["completed_rounds"] = len(market.rounds)
++        if aborted_err is not None:
++            logger.metadata["aborted"] = repr(aborted_err)
++        logger.save_experiment_summary()
++        try:
++            metrics = compute_metrics_for_exp_dir(logger.log_dir)
++            write_metrics_to_file(logger.log_dir, metrics)
++        except Exception as e:
++            print(f"Metrics computation failed on partial data: {e!r} (round logs are intact)")
++            metrics = None
+ 
+-    logger.save_experiment_summary()
+-    metrics = compute_metrics_for_exp_dir(logger.log_dir)
+-    write_metrics_to_file(logger.log_dir, metrics)
+-    log_metrics_to_wandb(params, run_name, metrics)
++    if metrics is not None and os.getenv("LOG_TO_WANDB") == "1":
++        log_metrics_to_wandb(params, run_name, metrics)
++    if aborted_err is not None:
++        raise SystemExit(1)
+ 
+ 
+ def log_metrics_to_wandb(params: ExperimentParams, run_name: str, metrics: dict[str, Any]):
+@@ -162,19 +186,17 @@ if __name__ == "__main__":
+         default=[100.0, 100.0, 100.0, 100.0, 100.0],
+     )
+     parser.add_argument(
+-        "--seller_models", 
++        "--seller_models",
+         type=str,
+         nargs="+",
+-        help="Models to use for sellers", 
+-        choices=SUPPORTED_MODELS,
++        help="Models to use for sellers (any id; '/'-style ids go to OpenRouter, 'mock' for testing)",
+         default=["gpt-4.1", "gpt-4.1", "gpt-4.1", "gpt-4.1", "gpt-4.1"],
+     )
+     parser.add_argument(
+-        "--buyer_models", 
++        "--buyer_models",
+         type=str,
+         nargs="+",
+-        help="Models to use for buyers",
+-        choices=SUPPORTED_MODELS,
++        help="Models to use for buyers ('zip' = free rule-based ZIP buyer)",
+         default=["gpt-4.1", "gpt-4.1", "gpt-4.1", "gpt-4.1", "gpt-4.1"],
+     )
+     parser.add_argument(
+@@ -234,5 +256,7 @@ if __name__ == "__main__":
+     )
+     args = parser.parse_args()
+     expt_params_dict = vars(args)
++    # Local change: "zip" buyers map to None, which simulation.py turns into ZIPBuyer.
++    expt_params_dict["buyer_models"] = [None if m == "zip" else m for m in expt_params_dict["buyer_models"]]
+     params = ExperimentParams(**expt_params_dict)
+     run_simulation(params)
+diff --git a/src/continuous_double_auction/util/misc.py b/src/continuous_double_auction/util/misc.py
+index e083f52..f8672a2 100644
+--- a/src/continuous_double_auction/util/misc.py
++++ b/src/continuous_double_auction/util/misc.py
+@@ -4,12 +4,15 @@ import re
+ from pathlib import Path
+ from typing import Dict, Any, List, Tuple
+ import numpy as np
+-from src.resources.model_wrappers import ModelWrapper, OpenAIClient, AnthropicClient, GoogleClient
++from src.resources.model_wrappers import ModelWrapper, OpenAIClient, AnthropicClient, GoogleClient, OpenRouterClient
++from src.resources.mock_wrapper import MockClient
+ 
+ 
+ def get_client(model: str, temperature: float, **kwargs) -> ModelWrapper:
+-    if model.startswith("gpt"):
+-        client = OpenAIClient(model, 
++    if model.startswith("mock"):
++        client = MockClient(model, temperature=temperature, **kwargs)
++    elif model.startswith("gpt"):
++        client = OpenAIClient(model,
+                               response_format={"type": "json_object"},
+                               temperature=temperature,
+                               **kwargs)
+@@ -22,7 +25,9 @@ def get_client(model: str, temperature: float, **kwargs) -> ModelWrapper:
+                               temperature=temperature,
+                               **kwargs)
+     else:
+-        raise ValueError(f"Unknown model: {model}")
++        # Any other id (e.g. "openai/gpt-4o-mini", "qwen/qwen-2.5-72b-instruct:free")
++        # is treated as an OpenRouter model id.
++        client = OpenRouterClient(model, temperature=temperature, **kwargs)
+     return client
+ 
+ 
