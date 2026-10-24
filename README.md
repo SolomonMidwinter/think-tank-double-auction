@@ -19,6 +19,29 @@ Working snapshot of the double-auction collusion-detection analysis for the
 - The data: 75 runs shipped in `data/` of https://github.com/andyjliu/llm-agent-collusion (292 MB). The loader expects it at `../llm-agent-collusion/data/` relative to this repo, or pass a path to `load_all()`.
 - API keys. Nothing in this analysis made an API call; $0 spent.
 
+
+## Provenance: what is ours vs inherited (for fact-checking)
+
+**Everything in this repo was written on 2026-10-24 (afternoon/evening, US Central) during
+the hackathon session, except the two items marked inherited.** Chronology, decisions and
+numbers are in `results/double_auction/ANALYSIS_LOG.md`.
+
+| Path | Status |
+|---|---|
+| `bonjour.py` | **Inherited** (Melkior / ElFuegoX Think-Tank repo), copied unchanged |
+| Agrawal et al. data | **Inherited, not included** (see above) |
+| `double_auction/loader.py`, `features.py`, `stats.py`, `controls.py`, `evaluate.py`, `grid.py`, `test_*.py` | Ours, this session: detector pipeline on the shipped data |
+| `double_auction/twin_replay.py`, `pilot_runner.py` | Ours, this session (evening): tools for the two pending experiments |
+| `env_patches/llm-agent-collusion.patch`, `mock_wrapper.py` | Ours, this session: all local changes to the Agrawal environment (afternoon: OpenRouter routing, mock client, ZIP buyers, partial saves; evening: ZIP adaptation, collusion flag, private channel, shadow twins, JSON mode, raw-response logging) |
+| `results/double_auction/ANALYSIS_LOG.md` | Ours: process log, sections 1-8 |
+| `results/double_auction/*.csv`, `*_log.txt` | Ours: outputs of controls, evaluation (200 and 1000 perms), grid, exploratory check |
+| `results/pilot_smokes/` | Ours: 2 mock runs + 3 paid smoke runs (nano, 4o-mini, 4.1-mini) + 1 failed 4.1-mini attempt, raw logs as produced by the environment |
+| `results/twins/mocktest/` | Ours: mock run of twin_replay on one shipped comms run (surgery check) |
+| `drafts/double_auction_results_section.md` | Ours: draft write-up, not yet in the team repo |
+
+Spend on the team OpenRouter key: $0.0455 total, all from the three smoke runs under
+`results/pilot_smokes/`. No other result here involved an API call.
+
 ## Headline
 
 On the shipped Agrawal et al. runs, no action-only dependence statistic (same-round or
@@ -30,6 +53,8 @@ same-model agents; net influence is the only calibrated statistic (1/10) and car
 weak positive signal (AUC ~0.6-0.7). Details and caveats in the analysis log and draft.
 
 ## Reproduce
+
+See also `results/double_auction/ANALYSIS_LOG.md` §7 for the full command list.
 
 ```
 python -m venv .venv && .venv/bin/pip install numpy pandas pytest
