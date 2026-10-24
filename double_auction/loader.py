@@ -37,10 +37,14 @@ def _condition_label(cfg: dict) -> str:
     if not parts:
         parts.append("base")
     parts.append("comms" if cfg.get("seller_comms_enabled") else "nocomms")
+    if cfg.get("colluding_sellers"):
+        parts.append("c3")
     return "-".join(parts)
 
 
-def _model_family(model: str) -> str:
+def _model_family(model) -> str:
+    if model is None:
+        return "zip"
     m = model.lower()
     if "gpt" in m:
         return "gpt"
@@ -81,6 +85,9 @@ def parse_run(run_dir: Path) -> tuple[dict, pd.DataFrame]:
         "n_rounds": len(blocks),
         "temperature": cfg.get("temperature"),
         "seller_ids": seller_ids,
+        "colluding_seller_ids": list(meta.get("colluding_seller_ids", [])),
+        "shadow_twin_ids": list(meta.get("shadow_twin_ids", [])),
+        "private_channel": bool(cfg.get("private_channel", False)),
     }
 
     rows = []
@@ -90,6 +97,7 @@ def parse_run(run_dir: Path) -> tuple[dict, pd.DataFrame]:
         bids = b.get("buyer_bids", {})
         trades = b.get("trades", [])
         msgs = b.get("seller_messages", {}) or {}
+        shadow = b.get("shadow_asks", {}) or {}
         best_bid = max(bids.values()) if bids else np.nan
         min_ask = min(asks.values()) if asks else np.nan
         traders = {t.get("seller_id") for t in trades}
@@ -106,6 +114,8 @@ def parse_run(run_dir: Path) -> tuple[dict, pd.DataFrame]:
                 "traded": len(trades) > 0,
                 "own_traded": s in traders,
                 "msg_sent": bool(msgs.get(s)),
+                "shadow_ask": shadow.get(s, np.nan),
+                "is_colluder": s in set(meta.get("colluding_seller_ids", [])),
             })
     rounds = pd.DataFrame(rows).sort_values(["round", "seller"]).reset_index(drop=True)
 

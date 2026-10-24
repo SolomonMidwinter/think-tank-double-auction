@@ -53,3 +53,22 @@ def test_message_timing(data):
 def test_parse_single_run_rejects_bad_dir(tmp_path):
     with pytest.raises(FileNotFoundError):
         parse_run(tmp_path)
+
+
+def test_pilot_fields_default_for_shipped_data(data):
+    runs, rounds = data
+    assert (runs["colluding_seller_ids"].map(len) == 0).all()
+    assert rounds["shadow_ask"].isna().all()
+    assert not rounds["is_colluder"].any()
+
+
+def test_loader_reads_mock_c3_run():
+    import glob
+    from pathlib import Path
+    cands = sorted(glob.glob(str(Path(DEFAULT_DATA_DIR).parent / "results" / "*mock-c3-twins")))
+    if not cands:
+        pytest.skip("no mock c3 run present")
+    r, f = parse_run(Path(cands[-1]))
+    assert r["condition"] == "base-comms-c3" and len(r["colluding_seller_ids"]) == 2
+    assert f.loc[f.is_colluder, "shadow_ask"].notna().mean() > 0.9
+    assert f.loc[~f.is_colluder, "shadow_ask"].isna().all()
