@@ -7,7 +7,7 @@ Working snapshot of the double-auction collusion-detection analysis for the
 
 | Path | Contents |
 |---|---|
-| `double_auction/` | Analysis code: `loader.py`, `features.py`, `stats.py`, `controls.py`, `evaluate.py`, `grid.py`, and three test files (18 tests). |
+| `double_auction/` | Analysis code: `loader.py`, `features.py`, `stats.py`, `controls.py`, `evaluate.py`, `grid.py`, `twin_replay.py`, `pilot_runner.py`, and three test files (20 tests). |
 | `bonjour.py` | Team implementation of the Bonjour et al. influence statistics (from ElFuegoX/Think-Tank, by Melkior). Copied unchanged so the code runs standalone. |
 | `results/double_auction/ANALYSIS_LOG.md` | **Start here.** Chronological record of pre-registration, controls, decisions, results, one retraction, and reproduction commands. |
 | `results/double_auction/*.csv, *_log.txt` | Every table quoted in the write-up, as produced. |
@@ -42,15 +42,23 @@ numbers are in `results/double_auction/ANALYSIS_LOG.md`.
 Spend on the team OpenRouter key: $0.0455 total, all from the three smoke runs under
 `results/pilot_smokes/`. No other result here involved an API call.
 
+All code and text marked "ours" was written with AI coding assistance during the sprint
+and reviewed by the author. Numbers were independently recomputed from the CSVs on the
+evening of 10/24 by a separate reviewer; the resulting corrections are recorded in the
+analysis log (§9).
+
 ## Headline
 
 On the shipped Agrawal et al. runs, no action-only dependence statistic (same-round or
-lag-1 conditional MI, net influence, correlation of ask changes) detects the seller
-communication channel. The pre-registered primary statistic points the wrong way
-(AUC 0.35): comms runs show *less* same-round dependence in asks than honest runs.
-The within-state permutation null flags 9/10 honest runs, i.e. it is misspecified for
-same-model agents; net influence is the only calibrated statistic (1/10) and carries a
-weak positive signal (AUC ~0.6-0.7). Details and caveats in the analysis log and draft.
+lag-1 conditional MI, net influence, correlation of ask changes) separates comms-on from
+comms-off at a 5% false-alarm rate. The pre-registered primary statistic points the wrong
+way (observed AUC 0.25, bias-corrected 0.35): comms runs show *less* same-round dependence
+in asks than honest runs. The within-state permutation null flags 9/10 honest runs: it
+tests conditional independence given a coarse state, a weaker null than "no channel",
+and same-model sellers in a shared market are not conditionally independent given a
+binary trade flag. Net influence is the only calibrated statistic (1/10 honest flagged)
+but shows no observed separation (observed AUC 0.53; the corrected 0.62 is driven by a
+null-mean difference, see log §9). Details and caveats in the analysis log and draft.
 
 ## Reproduce
 

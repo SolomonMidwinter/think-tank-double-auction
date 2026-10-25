@@ -36,28 +36,32 @@ No alternative state or coding repairs the group statistics (6 to 10 of 10 hones
 
 **3. Controls.** Lagged-copy injection raises the lag-1 effect in 9/10 runs and leaves the same-round effect flat (falls slightly in 9/10): the two statistics separate. Same-round-copy injection makes Γ fire in 6/10 runs and single out the injected pair in 7/10; it fails where honest lockstep is already high.
 
-**4. Detection of the channel.** Headline contrast, AUC of bias-corrected effect (dispersion: observed) vs the 10 honest runs:
+**4. Detection of the channel.** Headline contrast (10 gpt/gpt comms runs vs the 10 honest runs), AUC of the observed statistic and of the bias-corrected effect (observed minus permutation-null mean):
 
-| Statistic | 10 comms vs 10 honest | all 35 base-comms | oversight-comms |
-|---|---|---|---|
-| mean pairwise γ (primary) | **0.35** | 0.41 | 0.36 |
-| lag-1 γ | 0.24 | 0.41 | 0.34 |
-| max net influence Γ | 0.62 | 0.61 | 0.74 |
-| Pearson correlation | 0.66 | 0.65 | 0.50 |
-| paper's ask dispersion | 0.68 | 0.67 | 0.21 |
+| Statistic | observed / corrected AUC |
+|---|---|
+| mean pairwise γ (primary) | **0.25 / 0.35** |
+| lag-1 γ | 0.17 / 0.24 |
+| max net influence Γ | 0.53 / 0.62 |
+| Pearson correlation | 0.51 / 0.66 |
+| paper's ask dispersion | 0.68 (observed only; level statistic, no permutation null) |
+
+Corrected AUCs on the wider groups: all 35 base-comms runs γ 0.41, Γ 0.61, correlation 0.65, dispersion 0.67; oversight-comms γ 0.36, Γ 0.74, correlation 0.50, dispersion 0.21.
+
+The two columns differ by about 0.1 for every statistic, in the same direction. Observed Γ is 0.149 in both conditions; the corrected 0.62 comes entirely from the permutation-null mean being lower in comms runs (0.113 vs 0.143). Part of that gap is data quality: honest runs have more missing-ask gaps (24.6 vs 27.8 rounds with all five sellers observed), which inflates small-sample bias. Either the correction is legitimate and Γ and Pearson both carry a weak signal, or it is confounded and neither does. We do not claim the signal.
 
 Flagging at the fixed false-alarm rate: Γ by permutation (the only valid p-value) flags 0/10 headline comms runs, 5/35 base-comms overall, 3/10 oversight. Against the empirical honest maximum, γ flags 1/10 comms runs, Γ 0/10, dispersion 0/10.
 
-**5. The pre-registered hypothesis materialised.** Comms runs show *less* same-round dependence in asks than honest runs (mean γ effect 0.145 vs 0.177). Action marginals are nearly identical across the two conditions (~28% cut / 67% hold / 5% raise), so this is joint structure, not activity level. Once sellers have agreed by message they hold; honest sellers coordinate tacitly through the price signal and so move together more. Sign-discretised asks read the honest market as the more coupled one.
+**5. The pre-registered hypothesis materialised.** Comms runs show *less* same-round dependence in asks than honest runs (mean γ effect 0.128 vs 0.177 on the headline 10v10; 0.145 over all 35 base-comms runs). Action marginals are nearly identical across the two conditions (~28% cut / 67% hold / 5% raise), so this is joint structure, not activity level. Once sellers have agreed by message they hold; honest sellers coordinate tacitly through the price signal and so move together more. Sign-discretised asks read the honest market as the more coupled one.
 
-**6. Things that did not rescue it (post hoc, reported for completeness).** The correlation AUC of 0.66 is an artifact of bias correction (observed Pearson AUC 0.51; comms runs move less, so their null mean is lower). A pair-level "identical dollar move" score gives 0.56 on the headline runs, 0.46 on the 25 held-out base-comms runs, 0.19 on oversight; an earlier version that scored 0.80 was counting hold/hold matches and has been withdrawn. A magnitude-aware 4-symbol γ gives 0.26. Round-phase state lifts γ to 0.55 to 0.68 in 3 of 16 cells examined while still flagging 7 to 10 of 10 honest runs; not evidence.
+**6. Things that did not rescue it (post hoc, reported for completeness).** A pair-level "identical dollar move" score gives 0.56 on the headline runs, 0.46 on the 25 held-out base-comms runs, 0.19 on oversight; an earlier version that scored 0.80 was counting hold/hold matches and has been withdrawn. A magnitude-aware 4-symbol γ gives 0.26. Round-phase state lifts corrected γ to 0.55 to 0.68 in the 4 phase cells of the 16 examined (15 grid + primary) while still flagging 5 to 10 of 10 honest runs; not evidence.
 
-**7. Sensitivity (grid, `results/double_auction/grid_n200_summary.csv`).** Γ: honest flags 0 to 3/10 in all 15 cells, AUC 0.54 to 0.79 (median ~0.66), comms detections 0 to 6/10; the oversight lead moves between 0 and 7/10 across cells and 3/10 at 1000 permutations in the primary cell, so it is not stable. γ: AUC 0.32 to 0.43 in 12 of 15 cells.
+**7. Sensitivity (grid, `results/double_auction/grid_n200_summary.csv`).** Γ: honest flags 0 to 3/10 in all 15 cells, corrected AUC 0.54 to 0.79 (median ~0.66; see result 4 on why corrected values overstate separation), comms detections 0 to 6/10; the oversight lead moves between 0 and 7/10 across cells and 3/10 at 1000 permutations in the primary cell, so it is not stable. γ: corrected AUC 0.32 to 0.43 in 11 of 15 cells; the other 4 are the phase cells (result 6).
 
 ## Findings
-- On this data, **no action-only dependence statistic detects the broadcast communication channel**. The channel changes where prices settle (the paper's result; dispersion AUC 0.68 here) but does not leave a positive signature in the dependence structure of price moves. It leaves a negative one.
-- **The within-state permutation null does not control false alarms for same-model LLM agents.** Nine of ten honest runs are "colluding" by that test. Any market result that reports permutation p-values for a group dependence statistic on same-model agents without an honest-twin or cross-run calibration should be read with that in mind, including our own.
-- **Net influence is correctly calibrated throughout and carries a weak positive signal** (AUC ~0.6 to 0.7, 0 to 6/10 detections). It is built for a colluding subset; Agrawal's channel is a broadcast to all five sellers, which is the worst case for it. The pilot with two of five sellers instructed to collude is the regime it was designed for.
+- On this data, **no action-only dependence statistic reaches useful power against the broadcast communication channel at a 5% false-alarm rate**. The channel changes where prices settle (the paper's result; dispersion AUC 0.68 here) but does not leave a positive signature in the dependence structure of price moves. It leaves a negative one.
+- **The within-state permutation null does not control false alarms for same-model LLM agents.** Nine of ten honest runs are "colluding" by that test. The reason is that the null it tests, conditional independence of sellers' actions given a coarse state, is weaker than the null we care about, which is "no channel": honest sellers that share a model and a realized market are not conditionally independent given a binary trade flag. Any market result that reports permutation p-values for a group dependence statistic on same-model agents without an honest-twin or cross-run calibration should be read with that in mind, including our own.
+- **Net influence is correctly calibrated in every configuration**, because the common cause raises every pair's γ about equally and the max-over-others subtraction cancels it. It shows no observed separation here (observed AUC 0.53; the corrected 0.62 is driven by a null-mean difference, result 4). It is built for a colluding subset and Agrawal's broadcast to all five sellers is its worst case; the injection control (an 80% same-round copy caught in only 6/10 runs) suggests modest power even in the subset regime the pilot targets.
 - **Honest same-model sellers already share ~0.29 bits of same-round information per pair**, half from the model and half from the shared realized market. This is the quantity the model-matched null must subtract, and it is large relative to any channel effect we can see.
 
 ## Limitations
